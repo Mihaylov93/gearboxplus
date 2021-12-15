@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/cil-gauge.svg</file>
+    </qresource>
+</RCC>
