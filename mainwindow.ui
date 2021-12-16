@@ -96,13 +96,7 @@
       </property>
       <layout class="QGridLayout" name="gridLayout_4">
        <item row="1" column="0">
-        <widget class="QComboBox" name="cbGpu">
-         <item>
-          <property name="text">
-           <string>Off</string>
-          </property>
-         </item>
-        </widget>
+        <widget class="QComboBox" name="cbGpu"/>
        </item>
        <item row="0" column="0">
         <widget class="QLabel" name="label_3">
@@ -189,12 +183,18 @@
     </item>
     <item row="1" column="1">
      <widget class="QGroupBox" name="gbPreset">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <property name="title">
        <string>Preset</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_6">
        <item row="1" column="0">
         <widget class="QComboBox" name="cbPreset">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
          <item>
           <property name="text">
            <string>Custom</string>

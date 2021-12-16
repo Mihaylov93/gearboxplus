@@ -35,4 +35,5 @@ private:
     QStringList _gpuGovernors;
 private slots:
     void onComboBoxChanged(int iIndex);
+    void onApplyPressed();
 };

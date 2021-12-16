@@ -1,5 +1,7 @@
 #include "mainwindow.hpp"
 #include "./ui_mainwindow.h"
+#include <stdlib.h>
+
 #include <QDir>
 #include <QString>
 #include <QDebug>
@@ -22,6 +24,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     foreach (QComboBox *mComboBox, mA72comboBoxes) {
         connect(mComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onComboBoxChanged);
     }
+
+    connect(ui->pbApply, &QPushButton::released, this, &MainWindow::onApplyPressed);
 }
 
 MainWindow::~MainWindow()
@@ -73,10 +77,9 @@ void MainWindow::populateGpuFreq()
         = getValueFromFile("/sys/devices/platform/ff9a0000.gpu/devfreq/ff9a0000.gpu/available_frequencies").split(' ');
     addMhzToItems(_gpuFrequencies, 1000000);
 
-    const QString mGpuCurrentFreq
-        = getValueFromFile("/sys/devices/platform/ff9a0000.gpu/devfreq/ff9a0000.gpu/cur_freq");
+    const QString mGpuMaxFreq = getValueFromFile("/sys/devices/platform/ff9a0000.gpu/devfreq/ff9a0000.gpu/max_freq");
     ui->cbGpu->addItems(_gpuFrequencies);
-    ui->cbGpu->setCurrentText(valueToMhz(mGpuCurrentFreq, 1000000));
+    ui->cbGpu->setCurrentText(valueToMhz(mGpuMaxFreq, 1000000));
 }
 
 void MainWindow::populateGovernors()
@@ -99,10 +102,6 @@ void MainWindow::addMhzToItems(QStringList &iList, const int &scale)
     for (auto &i : iList) {
         i = valueToMhz(i, scale);
     }
-}
-
-void MainWindow::validate()
-{
 }
 
 QString MainWindow::valueToMhz(const QString &iKhz, const int &scale)
@@ -135,4 +134,27 @@ void MainWindow::onComboBoxChanged(int iIndex)
             }
         }
     }
+}
+
+void MainWindow::onApplyPressed()
+{
+    QList<QComboBox *> mCpuComboBoxes = ui->gbA53->findChildren<QComboBox *>() + ui->gbA72->findChildren<QComboBox *>();
+    foreach (QComboBox *mComboBox, mCpuComboBoxes) {
+        const QString mCore = mComboBox->objectName().right(1);
+        if (mComboBox->currentText() == "Off") {
+            system(QString("echo 0 | sudo tee /sys/devices/system/cpu/cpu" + mCore + "/online").toStdString().c_str());
+        } else {
+            system(QString("echo 1 | sudo tee /sys/devices/system/cpu/cpu" + mCore + "/online").toStdString().c_str());
+            system(QString("echo 1 | sudo tee /sys/devices/system/cpu/cpu" + mCore + "/online").toStdString().c_str());
+            system(QString("echo " + mhzToValue(mComboBox->currentText()) + " | sudo tee /sys/devices/system/cpu/cpu"
+                           + mCore + "/cpufreq/scaling_max_freq")
+                       .toStdString()
+                       .c_str());
+        }
+    }
+
+    QString mGpuFreq = mhzToValue(ui->cbGpu->currentText(), 1000000);
+    system(QString("echo " + mGpuFreq + " | sudo tee /sys/devices/platform/ff9a0000.gpu/devfreq/ff9a0000.gpu/max_freq")
+               .toStdString()
+               .c_str());
 }
