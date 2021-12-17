@@ -99,7 +99,8 @@ void MainWindow::populateGovernors()
 
 void MainWindow::populatePresets()
 {
-    QFile file(QCoreApplication::applicationDirPath() + "/presets.csv");
+    // TODO(Petrov): If not installed as deb package check the root of the executable for this file.
+    QFile file("/usr/share/gearboxplus/presets.csv");
     if (!file.open(QIODevice::ReadOnly)) {
         qDebug() << file.errorString();
     }
