@@ -33,6 +33,7 @@ set(PROJECT_SOURCES
         mainwindow.hpp
         mainwindow.ui
         resources.qrc
+        presets.csv
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

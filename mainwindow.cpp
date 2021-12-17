@@ -14,7 +14,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
     populateCpuFreq();
     populateGpuFreq();
     populateGovernors();
-
+    populatePresets();
     QList<QComboBox *> mA53comboBoxes = ui->gbA53->findChildren<QComboBox *>();
     QList<QComboBox *> mA72comboBoxes = ui->gbA72->findChildren<QComboBox *>();
 
@@ -25,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWi
         connect(mComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onComboBoxChanged);
     }
 
+    connect(ui->cbPreset, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &MainWindow::onPresetChanged);
     connect(ui->pbApply, &QPushButton::released, this, &MainWindow::onApplyPressed);
 }
 
@@ -97,6 +98,26 @@ void MainWindow::populateGovernors()
     ui->cbGpuGov->setCurrentText(mCurrentGpuGov);
 }
 
+void MainWindow::populatePresets()
+{
+    QFile file(QCoreApplication::applicationDirPath() + "/presets.csv");
+    if (!file.open(QIODevice::ReadOnly)) {
+        qDebug() << file.errorString();
+    }
+
+    file.readLine();    // Skip header
+    while (!file.atEnd()) {
+        QByteArray line = file.readLine();
+        QList<QByteArray> mLine = line.split(',');
+        Preset mPreset
+            = {mLine[0],
+               {mLine[1].toShort(), mLine[2].toShort(), mLine[3].toShort(), mLine[4].toShort(), mLine[5].toShort(),
+                mLine[6].toShort(), mLine[7].toShort(), mLine[8].toShort(), mLine[9].toShort()}};
+        ui->cbPreset->addItem(mLine[0]);
+        _presets.append(mPreset);
+    }
+}
+
 void MainWindow::addMhzToItems(QStringList &iList, const int &scale)
 {
     for (auto &i : iList) {
@@ -123,13 +144,20 @@ QString MainWindow::getValueFromFile(const QString &iPath)
     return "-1";
 }
 
-void MainWindow::onComboBoxChanged(int iIndex)
+void MainWindow::setComboBoxIndex(QComboBox *ioCombo, const int &iIndex)
+{
+    QSignalBlocker mBlocker(ioCombo);
+    ioCombo->setCurrentIndex(iIndex);
+    mBlocker.unblock();
+}
+
+void MainWindow::onComboBoxChanged(int index)
 {
     foreach (QComboBox *mComboBox, sender()->parent()->findChildren<QComboBox *>()) {
         if (mComboBox != sender()) {
-            if (iIndex > 0 and mComboBox->currentIndex() > 0) {
+            if (index > 0 and mComboBox->currentIndex() > 0) {
                 QSignalBlocker mBlocker(mComboBox);
-                mComboBox->setCurrentIndex(iIndex);
+                mComboBox->setCurrentIndex(index);
                 mBlocker.unblock();
             }
         }
@@ -138,6 +166,9 @@ void MainWindow::onComboBoxChanged(int iIndex)
 
 void MainWindow::onApplyPressed()
 {
+    bool mA53Enabled = false;
+    bool mA72Enabled = false;
+
     QList<QComboBox *> mCpuComboBoxes = ui->gbA53->findChildren<QComboBox *>() + ui->gbA72->findChildren<QComboBox *>();
     foreach (QComboBox *mComboBox, mCpuComboBoxes) {
         const QString mCore = mComboBox->objectName().right(1);
@@ -145,11 +176,15 @@ void MainWindow::onApplyPressed()
             system(QString("echo 0 | sudo tee /sys/devices/system/cpu/cpu" + mCore + "/online").toStdString().c_str());
         } else {
             system(QString("echo 1 | sudo tee /sys/devices/system/cpu/cpu" + mCore + "/online").toStdString().c_str());
-            system(QString("echo 1 | sudo tee /sys/devices/system/cpu/cpu" + mCore + "/online").toStdString().c_str());
             system(QString("echo " + mhzToValue(mComboBox->currentText()) + " | sudo tee /sys/devices/system/cpu/cpu"
                            + mCore + "/cpufreq/scaling_max_freq")
                        .toStdString()
                        .c_str());
+            if (mCore.toInt() >= 0 and mCore.toInt() < 5) {
+                mA53Enabled = true;
+            } else {
+                mA72Enabled = true;
+            }
         }
     }
 
@@ -157,4 +192,42 @@ void MainWindow::onApplyPressed()
     system(QString("echo " + mGpuFreq + " | sudo tee /sys/devices/platform/ff9a0000.gpu/devfreq/ff9a0000.gpu/max_freq")
                .toStdString()
                .c_str());
+    if (mA53Enabled) {
+        system(QString("echo " + ui->cbCpuGov->currentText()
+                       + " | sudo tee /sys/devices/system/cpu/cpufreq/policy0/scaling_governor")
+                   .toStdString()
+                   .c_str());
+    }
+    if (mA72Enabled) {
+        system(QString("echo " + ui->cbCpuGov->currentText()
+                       + " | sudo tee /sys/devices/system/cpu/cpufreq/policy4/scaling_governor")
+                   .toStdString()
+                   .c_str());
+    }
+
+    system(QString("echo " + ui->cbCpuGov->currentText()
+                   + " | sudo tee /sys/devices/system/cpu/cpufreq/policy0/scaling_governor")
+               .toStdString()
+               .c_str());
+
+    system(QString("echo " + ui->cbGpuGov->currentText()
+                   + " | sudo tee /sys/devices/platform/ff9a0000.gpu/devfreq/ff9a0000.gpu/governor")
+               .toStdString()
+               .c_str());
+}
+
+void MainWindow::onPresetChanged(int index)
+{
+    if (index > 0) {
+        Preset mPreset = _presets[index - 1];
+        setComboBoxIndex(ui->cbCpu0, mPreset.indexes[0]);
+        setComboBoxIndex(ui->cbCpu1, mPreset.indexes[1]);
+        setComboBoxIndex(ui->cbCpu2, mPreset.indexes[2]);
+        setComboBoxIndex(ui->cbCpu3, mPreset.indexes[3]);
+        setComboBoxIndex(ui->cbCpu4, mPreset.indexes[4]);
+        setComboBoxIndex(ui->cbCpu5, mPreset.indexes[5]);
+        setComboBoxIndex(ui->cbGpu, mPreset.indexes[6]);
+        setComboBoxIndex(ui->cbCpuGov, mPreset.indexes[7]);
+        setComboBoxIndex(ui->cbGpuGov, mPreset.indexes[8]);
+    }
 }

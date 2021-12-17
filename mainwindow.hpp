@@ -9,6 +9,11 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
+struct Preset {
+    QString text;
+    QVector<short> indexes;
+};
+
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
@@ -21,19 +26,22 @@ private:
     void populateCpuFreq();
     void populateGpuFreq();
     void populateGovernors();
+    void populatePresets();
     void addMhzToItems(QStringList &iList, const int &scale = 1000);
 
     QString valueToMhz(const QString &iKhz, const int &scale = 1000);
     QString mhzToValue(const QString &iMhz, const int &scale = 1000);
 
     QString getValueFromFile(const QString &iPath);
-
+    void setComboBoxIndex(QComboBox *ioCombo, const int &iIndex);
     QStringList _cpuA53Frequencies;
     QStringList _cpuA72Frequencies;
     QStringList _gpuFrequencies;
     QStringList _cpuGovernors;
     QStringList _gpuGovernors;
+    QVector<Preset> _presets;
 private slots:
-    void onComboBoxChanged(int iIndex);
+    void onComboBoxChanged(int index);
     void onApplyPressed();
+    void onPresetChanged(int index);
 };
