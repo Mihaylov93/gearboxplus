@@ -27,13 +27,13 @@ private:
     void populateGpuFreq();
     void populateGovernors();
     void populatePresets();
-    void addMhzToItems(QStringList &iList, const int &scale = 1000);
+    static void addMhzToItems(QStringList &iList, const int &scale = 1000);
 
-    QString valueToMhz(const QString &iKhz, const int &scale = 1000);
-    QString mhzToValue(const QString &iMhz, const int &scale = 1000);
+    static QString valueToMhz(const QString &iKhz, const int &scale = 1000);
+    static QString mhzToValue(const QString &iMhz, const int &scale = 1000);
 
     QString getValueFromFile(const QString &iPath);
-    void setComboBoxIndex(QComboBox *ioCombo, const int &iIndex);
+    static void setComboBoxIndex(QComboBox *ioCombo, const int &iIndex);
     QStringList _cpuA53Frequencies;
     QStringList _cpuA72Frequencies;
     QStringList _gpuFrequencies;

@@ -1,12 +1,11 @@
 #include "mainwindow.hpp"
 #include "./ui_mainwindow.h"
-#include <stdlib.h>
 
-#include <QDir>
-#include <QString>
 #include <QDebug>
+#include <QDir>
 #include <QFile>
 #include <QObjectList>
+#include <QString>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow)
 {
@@ -42,7 +41,7 @@ void MainWindow::populateCpuFreq()
     addMhzToItems(_cpuA53Frequencies);
     QString mCurrentA53Frequency = getValueFromFile("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq");
     for (int i = 0; i < 4; i++) {
-        QComboBox *mChild = ui->gbA53->findChild<QComboBox *>("cbCpu" + QString::number(i));
+        auto *mChild = ui->gbA53->findChild<QComboBox *>("cbCpu" + QString::number(i));
         mChild->addItems(_cpuA53Frequencies);
 
         QString mCpuStatus = getValueFromFile(QString("/sys/devices/system/cpu/cpu" + QString::number(i) + "/online"));
@@ -60,7 +59,7 @@ void MainWindow::populateCpuFreq()
 
     QString mCurrentA72Frequency = getValueFromFile("/sys/devices/system/cpu/cpu4/cpufreq/cpuinfo_cur_freq");
     for (int i = 4; i < 6; i++) {
-        QComboBox *mChild = ui->gbA72->findChild<QComboBox *>("cbCpu" + QString::number(i));
+        auto *mChild = ui->gbA72->findChild<QComboBox *>("cbCpu" + QString::number(i));
         mChild->addItems(_cpuA72Frequencies);
         QString mCpuStatus = getValueFromFile("/sys/devices/system/cpu/cpu" + QString::number(i) + "/online");
         if (mCpuStatus == "1") {
@@ -125,17 +124,17 @@ void MainWindow::addMhzToItems(QStringList &iList, const int &scale)
     }
 }
 
-QString MainWindow::valueToMhz(const QString &iKhz, const int &scale)
+auto MainWindow::valueToMhz(const QString &iKhz, const int &scale) -> QString
 {
     return QString::number(iKhz.toInt() / scale) + " Mhz";
 }
 
-QString MainWindow::mhzToValue(const QString &iMhz, const int &scale)
+auto MainWindow::mhzToValue(const QString &iMhz, const int &scale) -> QString
 {
     return QString::number(iMhz.split(" ").constFirst().toInt() * scale);
 }
 
-QString MainWindow::getValueFromFile(const QString &iPath)
+auto MainWindow::getValueFromFile(const QString &iPath) -> QString
 {
     QFile mFile(iPath, this);
     if (mFile.open(QIODevice::ReadOnly)) {
