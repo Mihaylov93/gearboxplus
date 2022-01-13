@@ -17,9 +17,12 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
 
 set(PROJECT_SOURCES
         src/main.cpp
+        src/cores/basecore.hpp
+        src/cores/a06core.cpp
+        src/cores/a04core.cpp
+        src/cores/corefactory.cpp
         src/mainwindow.cpp
         src/mainwindow.hpp
-        src/mainwindow.ui
         src/resources.qrc
         presets.csv
 )
