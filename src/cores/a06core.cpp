@@ -27,6 +27,7 @@ A06Core::A06Core()
     gbA53->setObjectName("gbA53");
     _widgetLayout->addWidget(gbA53, 0, 0);
     QGroupBox *gbA72 = new QGroupBox("Cortex-A72", this);
+    gbA72->setObjectName("gbA72");
     _widgetLayout->addWidget(gbA72, 0, 1);
     QGroupBox *gbGpu = new QGroupBox("Mali-T860", this);
     _widgetLayout->addWidget(gbGpu, 0, 2);
