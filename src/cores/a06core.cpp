@@ -1,10 +1,10 @@
 #include "a06core.hpp"
-#include <QGroupBox>
 #include <QComboBox>
-#include <QLabel>
 #include <QDebug>
-#include <QPushButton>
 #include <QGridLayout>
+#include <QGroupBox>
+#include <QLabel>
+#include <QPushButton>
 
 A06Core::A06Core()
 {
@@ -95,10 +95,6 @@ A06Core::A06Core()
     wdgApply->layout()->addWidget(pbApply);
     _widgetLayout->addWidget(wdgApply, 1, 2);
 
-    // populateCpuFreq();
-    // populateGpuFreq();
-    // populateGovernors();
-    // populatePresets();
     QList<QComboBox *> mA53comboBoxes = gbA53->findChildren<QComboBox *>();
     QList<QComboBox *> mA72comboBoxes = gbA72->findChildren<QComboBox *>();
 
@@ -216,7 +212,7 @@ void A06Core::onApplyPressed()
             system(QString("echo 0 | sudo tee /sys/devices/system/cpu/cpu" + mCore + "/online").toStdString().c_str());
         } else {
             system(QString("echo 1 | sudo tee /sys/devices/system/cpu/cpu" + mCore + "/online").toStdString().c_str());
-            system(QString("echo " + this->mhzToValue(mComboBox->currentText())
+            system(QString("echo " + mhzToValue(mComboBox->currentText())
                            + " | sudo tee / sys / devices / system / cpu / cpu " + mCore + "/cpufreq/scaling_max_freq")
                        .toStdString()
                        .c_str());

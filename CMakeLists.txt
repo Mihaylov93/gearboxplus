@@ -24,7 +24,6 @@ set(PROJECT_SOURCES
         src/mainwindow.cpp
         src/mainwindow.hpp
         src/resources.qrc
-        presets.csv
 )
 
 

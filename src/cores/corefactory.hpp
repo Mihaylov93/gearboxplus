@@ -6,5 +6,5 @@ class CoreFactory : public BaseCore
 {
 public:
     CoreFactory() = default;
-    static BaseCore *make_core(std::string core);
+    static BaseCore *make_core(const std::string& core);
 };

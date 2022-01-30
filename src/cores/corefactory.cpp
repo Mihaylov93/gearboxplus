@@ -1,13 +1,14 @@
 #include "corefactory.hpp"
-#include "a06core.hpp"
 #include "a04core.hpp"
+#include "a06core.hpp"
 
-BaseCore *CoreFactory::make_core(std::string core)
+auto CoreFactory::make_core(const std::string& core) -> BaseCore*
 {
     if (core == "a06") {
         return new A06Core();
     } else if (core == "a04") {
         return new A04Core();
-    } else
-        return nullptr;
+    }
+
+    return nullptr;
 }

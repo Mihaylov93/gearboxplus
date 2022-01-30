@@ -1,17 +1,29 @@
 #include "a04core.hpp"
+#include <QDebug>
 #include <QGridLayout>
 #include <QGroupBox>
 #include <QLabel>
 #include <QPushButton>
-#include <QSizePolicy>
+
 A04Core::A04Core()
 {
+    QFile file("/usr/share/gearboxplus/presets.csv");
+    if (!file.open(QIODevice::ReadWrite)) {
+        qDebug() << file.errorString();
+    }
+    if (file.readAll().size() == 0) {
+        QFile presetFile(":/../a04presets.csv");
+        presetFile.open(QFile::ReadOnly);
+        file.write((char *)presetFile.map(0, presetFile.size()), presetFile.size());
+        presetFile.close();
+    }
+    file.close();
     _widgetLayout = new QGridLayout(this);
     this->setLayout(_widgetLayout);
     QGroupBox *gbA53 = new QGroupBox("Cortex-A53", this);
     gbA53->setObjectName("gbA53");
     _widgetLayout->addWidget(gbA53, 0, 0, 1, 2);
-    // gbA53->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
     QGroupBox *gbGpu = new QGroupBox("Mali-T720", this);
     _widgetLayout->addWidget(gbGpu, 0, 2);
     QGroupBox *gbGov = new QGroupBox("Governor", this);
@@ -76,28 +88,127 @@ A04Core::A04Core()
     wdgApply->layout()->addWidget(new QLabel("", this));
     wdgApply->layout()->addWidget(pbApply);
     _widgetLayout->addWidget(wdgApply, 1, 2);
+
+    foreach (QComboBox *mComboBox, gbA53->findChildren<QComboBox *>()) {
+        connect(mComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &A04Core::onComboBoxChanged);
+    }
+
+    connect(cbPreset, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &A04Core::onPresetChanged);
+    connect(pbApply, &QPushButton::released, this, &A04Core::onApplyPressed);
 }
 
 void A04Core::populateCpuFreq()
 {
+    _cpuA53Frequencies
+        = getValueFromFile("/sys/devices/system/cpu/cpu0/cpufreq/scaling_available_frequencies").split(' ');
+    addMhzToItems(_cpuA53Frequencies);
+    QString mCurrentA53Frequency = getValueFromFile("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_cur_freq");
+    for (int i = 0; i < 4; i++) {
+        auto *mChild = this->findChild<QComboBox *>("cbCpu" + QString::number(i));
+        mChild->addItems(_cpuA53Frequencies);
+
+        QString mCpuStatus = getValueFromFile(QString("/sys/devices/system/cpu/cpu" + QString::number(i) + "/online"));
+
+        if (mCpuStatus == "1") {
+            mChild->setCurrentText(valueToMhz(mCurrentA53Frequency));
+        } else {
+            mChild->setCurrentIndex(0);
+        }
+    }
 }
 
 void A04Core::populateGpuFreq()
 {
+    _gpuFrequencies
+        = getValueFromFile("/sys/devices/platform/ff9a0000.gpu/devfreq/ff9a0000.gpu/available_frequencies").split(' ');
+    addMhzToItems(_gpuFrequencies, 1000000);
+
+    const QString mGpuMaxFreq = getValueFromFile("/sys/devices/platform/ff9a0000.gpu/devfreq/ff9a0000.gpu/max_freq");
+    QComboBox *cbGpu = this->findChild<QComboBox *>("cbGpu");
+    cbGpu->addItems(_gpuFrequencies);
+    cbGpu->setCurrentText(valueToMhz(mGpuMaxFreq, 1000000));
 }
 
 void A04Core::populateGovernors()
 {
+    _cpuGovernors = getValueFromFile("/sys/devices/system/cpu/cpufreq/policy0/scaling_available_governors").split(' ');
+    const QString mCurrentCpuGov = getValueFromFile("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor");
+    QComboBox *cbCpuGov = this->findChild<QComboBox *>("cbCpuGov");
+    cbCpuGov->addItems(_cpuGovernors);
+    cbCpuGov->setCurrentText(mCurrentCpuGov);
+
+    _gpuGovernors
+        = getValueFromFile("/sys/devices/platform/ff9a0000.gpu/devfreq/ff9a0000.gpu/available_governors").split(' ');
+    const QString mCurrentGpuGov = getValueFromFile("/sys/devices/platform/ff9a0000.gpu/devfreq/ff9a0000.gpu/governor");
+    QComboBox *cbGpuGov = this->findChild<QComboBox *>("cbGpuGov");
+    cbGpuGov->addItems(_gpuGovernors);
+    cbGpuGov->setCurrentText(mCurrentGpuGov);
 }
 
 void A04Core::populatePresets()
 {
+    QFile file("/usr/share/gearboxplus/presets.csv");
+    if (!file.open(QIODevice::ReadOnly)) {
+        qDebug() << file.errorString();
+    }
+
+    file.readLine();    // Skip header
+    while (!file.atEnd()) {
+        QByteArray line = file.readLine();
+        QList<QByteArray> mLine = line.split(',');
+        Preset mPreset
+            = {mLine[0],
+               {mLine[1].toShort(), mLine[2].toShort(), mLine[3].toShort(), mLine[4].toShort(), mLine[5].toShort(),
+                mLine[6].toShort(), mLine[7].toShort(), mLine[8].toShort(), mLine[9].toShort()}};
+        this->findChild<QComboBox *>("cbPreset")->addItem(mLine[0]);
+        _presets.append(mPreset);
+    }
 }
 
 void A04Core::onApplyPressed()
 {
+    QGroupBox *gbA53 = this->findChild<QGroupBox *>("gbA53");
+    foreach (QComboBox *mComboBox, gbA53->findChildren<QComboBox *>()) {
+        const QString mCore = mComboBox->objectName().right(1);
+        if (mComboBox->currentText() == "Off") {
+            system(QString("echo 0 | sudo tee /sys/devices/system/cpu/cpu" + mCore + "/online").toStdString().c_str());
+        } else {
+            system(QString("echo 1 | sudo tee /sys/devices/system/cpu/cpu" + mCore + "/online").toStdString().c_str());
+            system(QString("echo " + this->mhzToValue(mComboBox->currentText())
+                           + " | sudo tee /sys/devices/system/cpu/cpu" + mCore + "/cpufreq/scaling_max_freq")
+                       .toStdString()
+                       .c_str());
+        }
+    }
+
+    QComboBox *cbGpu = this->findChild<QComboBox *>("cbGpu");
+    QString mGpuFreq = mhzToValue(cbGpu->currentText(), 1000000);
+
+    system(QString("echo " + mGpuFreq + " | sudo tee /sys/devices/platform/ff9a0000.gpu/devfreq/ff9a0000.gpu/max_freq")
+               .toStdString()
+               .c_str());
+
+    system(QString("echo " + this->findChild<QComboBox *>("cbCpuGov")->currentText()
+                   + " | sudo tee /sys/devices/system/cpu/cpufreq/policy0/scaling_governor")
+               .toStdString()
+               .c_str());
+
+    system(QString("echo " + this->findChild<QComboBox *>("cbGpuGov")->currentText()
+                   + " | sudo tee /sys/devices/platform/ff9a0000.gpu/devfreq/ff9a0000.gpu/governor")
+               .toStdString()
+               .c_str());
 }
 
 void A04Core::onPresetChanged(int index)
 {
+    if (index > 0) {
+        Preset mPreset = _presets[index - 1];
+        setComboBoxIndex(this->findChild<QComboBox *>("cbCpu0"), mPreset.indexes[0]);
+        setComboBoxIndex(this->findChild<QComboBox *>("cbCpu1"), mPreset.indexes[1]);
+        setComboBoxIndex(this->findChild<QComboBox *>("cbCpu2"), mPreset.indexes[2]);
+        setComboBoxIndex(this->findChild<QComboBox *>("cbCpu3"), mPreset.indexes[3]);
+        setComboBoxIndex(this->findChild<QComboBox *>("cbGpu"), mPreset.indexes[4]);
+        setComboBoxIndex(this->findChild<QComboBox *>("cbCpuGov"), mPreset.indexes[5]);
+        setComboBoxIndex(this->findChild<QComboBox *>("cbGpuGov"), mPreset.indexes[6]);
+    }
 }

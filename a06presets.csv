@@ -1,0 +1,7 @@
+name,cpu0,cpu1,cpu2,cpu3,cpu4,cpu5,gpu,cpugov,gpugov
+Simple writting tasks (Long battery life),2,0,0,0,0,0,0,5,1
+Web browsing (Long battery life),3,3,0,0,0,0,0,5,1
+Most 2D games and emulators,4,4,4,4,0,0,2,5,1
+Playing videos and 3D games,0,0,0,0,4,4,2,5,1
+Performance first tasks,0,0,0,0,5,5,2,5,1
+Max performance (Max power usage),6,6,6,6,8,8,5,4,0

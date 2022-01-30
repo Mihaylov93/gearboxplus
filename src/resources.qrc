@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/">
         <file>../icons/cil-gauge.svg</file>
+        <file>../a04presets.csv</file>
+        <file>../a06presets.csv</file>
     </qresource>
 </RCC>

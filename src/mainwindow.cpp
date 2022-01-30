@@ -1,5 +1,4 @@
 #include "mainwindow.hpp"
-#include "./ui_mainwindow.h"
 
 #include <QDebug>
 #include <QDir>
@@ -7,11 +6,13 @@
 #include <QObjectList>
 #include <QString>
 #include <QGroupBox>
+#include <QGridLayout>
 #include "cores/corefactory.hpp"
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
-    QGridLayout *layout = new QGridLayout;
+    setWindowIcon(QIcon("qrc:/../icons/cil-gauge.svg"));
+    QGridLayout *layout = new QGridLayout(this);
     _centralWidget = new QWidget(this);
 
     QFile file("/etc/armbian-release");
@@ -22,8 +23,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
     file.readLine();    // Skip header
     QString mCoreModel = file.readLine().trimmed().right(3);
 
-    //_core = CoreFactory::make_core(mCoreModel.toStdString());
-    _core = CoreFactory::make_core("a04");
+    _core = CoreFactory::make_core(mCoreModel.toStdString());
     this->setCentralWidget(_centralWidget);
     this->centralWidget()->setLayout(layout);
     this->centralWidget()->layout()->addWidget(_core);
