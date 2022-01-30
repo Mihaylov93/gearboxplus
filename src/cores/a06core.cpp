@@ -8,6 +8,19 @@
 
 A06Core::A06Core()
 {
+    QFile file("/usr/share/gearboxplus/presets.csv");
+    if (!file.open(QIODevice::ReadWrite)) {
+        qDebug() << file.errorString();
+    }
+    if (file.readAll().size() == 0) {
+        QFile presetFile(":/a06presets.csv");
+        presetFile.open(QFile::ReadOnly);
+        QByteArray content = presetFile.readAll();
+        file.write(content);
+        presetFile.close();
+    }
+    file.close();
+
     _widgetLayout = new QGridLayout(this);
     this->setLayout(_widgetLayout);
     QGroupBox *gbA53 = new QGroupBox("Cortex-A53", this);

@@ -12,7 +12,7 @@ A04Core::A04Core()
         qDebug() << file.errorString();
     }
     if (file.readAll().size() == 0) {
-        QFile presetFile(":/../a04presets.csv");
+        QFile presetFile(":/a04presets.csv");
         presetFile.open(QFile::ReadOnly);
         file.write((char *)presetFile.map(0, presetFile.size()), presetFile.size());
         presetFile.close();

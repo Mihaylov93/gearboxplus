@@ -11,7 +11,7 @@
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent)
 {
-    setWindowIcon(QIcon("qrc:/../icons/cil-gauge.svg"));
+    setWindowIcon(QIcon("qrc:/icons/cil-gauge.svg"));
     QGridLayout *layout = new QGridLayout(this);
     _centralWidget = new QWidget(this);
 

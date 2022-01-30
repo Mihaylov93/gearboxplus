@@ -23,7 +23,7 @@ set(PROJECT_SOURCES
         src/cores/corefactory.cpp
         src/mainwindow.cpp
         src/mainwindow.hpp
-        src/resources.qrc
+        resources.qrc
 )
 
 
