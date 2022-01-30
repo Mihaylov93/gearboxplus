@@ -225,8 +225,8 @@ void A06Core::onApplyPressed()
             system(QString("echo 0 | sudo tee /sys/devices/system/cpu/cpu" + mCore + "/online").toStdString().c_str());
         } else {
             system(QString("echo 1 | sudo tee /sys/devices/system/cpu/cpu" + mCore + "/online").toStdString().c_str());
-            system(QString("echo " + mhzToValue(mComboBox->currentText())
-                           + " | sudo tee / sys / devices / system / cpu / cpu " + mCore + "/cpufreq/scaling_max_freq")
+            system(QString("echo " + mhzToValue(mComboBox->currentText()) + " | sudo tee /sys/devices/system/cpu/cpu"
+                           + mCore + "/cpufreq/scaling_max_freq")
                        .toStdString()
                        .c_str());
             if (mCore.toInt() >= 0 and mCore.toInt() < 5) {
